@@ -1,0 +1,109 @@
+@startuml
+
+package "Acme.CatchUp.Platform.Shared.Application.Patterns" {
+  abstract class "Result<TValue, TError>" {
+    +bool IsSuccess
+    +bool IsFailure
+  }
+}
+
+package "Acme.CatchUp.Platform.Shared.Domain.Repositories" {
+  interface "IBaseRepository<TEntity>" {
+    +Task AddAsync(TEntity entity, CancellationToken)
+    +Task<TEntity?> FindByIdAsync(int id, CancellationToken)
+    +void Update(TEntity entity)
+    +void Remove(TEntity entity)
+    +Task<IEnumerable<TEntity>> ListAsync(CancellationToken)
+  }
+  interface IUnitOfWork {
+    +Task CompleteAsync(CancellationToken)
+  }
+}
+
+package "Acme.CatchUp.Platform.Shared.Domain.Model" {
+  interface IAuditableEntity {
+    +DateTimeOffset? CreatedAt
+    +DateTimeOffset? UpdatedAt
+  }
+}
+
+package "Acme.CatchUp.Platform.News.Domain.Model.ValueObjects" {
+  class NewsApiKey <<sealed record>> {
+    +string Value
+    +string MaskedForLogging()
+  }
+  class SourceId <<sealed record>> {
+    +string Value
+  }
+}
+
+package "Acme.CatchUp.Platform.News.Domain.Model.Aggregates" {
+  class FavoriteSource {
+    +int Id
+    +NewsApiKey NewsApiKey
+    +SourceId SourceId
+    +DateTimeOffset? CreatedAt
+    +DateTimeOffset? UpdatedAt
+  }
+}
+
+package "Acme.CatchUp.Platform.News.Domain.Model.Commands" {
+  class CreateFavoriteSourceCommand <<record>> {
+    +NewsApiKey NewsApiKey
+    +SourceId SourceId
+  }
+  class DeleteFavoriteSourceCommand <<sealed record>> {
+    +int Id
+  }
+}
+
+package "Acme.CatchUp.Platform.News.Domain.Model.Queries" {
+  class GetFavoriteSourceByIdQuery <<record>> {
+    +int Id
+  }
+  class GetAllFavoriteSourcesByNewsApiKeyQuery <<record>> {
+    +NewsApiKey NewsApiKey
+  }
+  class GetFavoriteSourceByNewsApiKeyAndSourceIdQuery <<record>> {
+    +NewsApiKey NewsApiKey
+    +SourceId SourceId
+  }
+}
+
+package "Acme.CatchUp.Platform.News.Domain.Repositories" {
+  interface IFavoriteSourceRepository {
+    +Task<IEnumerable<FavoriteSource>> FindByNewsApiKeyAsync(NewsApiKey, CancellationToken)
+    +Task<FavoriteSource?> FindByNewsApiKeyAndSourceIdAsync(NewsApiKey, SourceId, CancellationToken)
+  }
+}
+
+package "Acme.CatchUp.Platform.News.Application.Services" {
+  interface IFavoriteSourceCommandService {
+    +Task<Result<FavoriteSource, CreateFavoriteSourceError>> Handle(CreateFavoriteSourceCommand, CancellationToken)
+    +Task<Result<int, DeleteFavoriteSourceError>> Handle(DeleteFavoriteSourceCommand, CancellationToken)
+  }
+  interface IFavoriteSourceQueryService {
+    +Task<IEnumerable<FavoriteSource>> Handle(GetAllFavoriteSourcesByNewsApiKeyQuery, CancellationToken)
+    +Task<FavoriteSource?> Handle(GetFavoriteSourceByNewsApiKeyAndSourceIdQuery, CancellationToken)
+    +Task<FavoriteSource?> Handle(GetFavoriteSourceByIdQuery, CancellationToken)
+  }
+}
+
+package "Acme.CatchUp.Platform.News.Interfaces.REST" {
+  class FavoriteSourcesController {
+    +Task<ActionResult> CreateFavoriteSource(CreateFavoriteSourceResource, CancellationToken)
+    +Task<ActionResult> GetFavoriteSourceFromQuery(string, string?, CancellationToken)
+    +Task<ActionResult> GetFavoriteSourceById(int, CancellationToken)
+    +Task<ActionResult> DeleteFavoriteSource(int, CancellationToken)
+  }
+}
+
+IBaseRepository <|.. IFavoriteSourceRepository
+FavoriteSource ..|> IAuditableEntity
+FavoriteSource *-- "1" NewsApiKey
+FavoriteSource *-- "1" SourceId
+FavoriteSourcesController ..> IFavoriteSourceCommandService : uses
+FavoriteSourcesController ..> IFavoriteSourceQueryService : uses
+IFavoriteSourceCommandService ..> "Result<TValue, TError>" : returns
+
+@enduml
