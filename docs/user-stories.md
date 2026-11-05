@@ -119,4 +119,10 @@ As a frontend developer, I want to remove a favorite source through the API so t
 - separated interface, en al capa de dominio esta la interface y el contrato esta en otra capa
 - result pattern, para manejar el resultado de la ejecucion del comando o query, si es exitoso o no, y si es exitoso devuelve el recurso creado o encontrado, si no es exitoso devuelve un error.
 - notification pattern, para notificar a los interesados de un cambio en el estado del sistema, por ejemplo, cuando se crea o elimina un favorito.
-- 
+- quienes pueden reaccionar a un evento de dominio, solo el bouded ocntext
+- PL publisher language-evento de dominio se convierte en evento de integracion, cuando un evento va a reaccionar en otro bouded context. pero debe convertirse en un ....
+- eventos del domio, puede comunicarse con agregates.
+- cuarta regla de los agregados es: Actualizar otros agregados utilizando consistencia eventual
+- el agregado
+- query contiene parametros para ejecutar el 
+  
